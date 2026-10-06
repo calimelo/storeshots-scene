@@ -18,6 +18,9 @@ storeshots starts your app with these environment variables:
 
 Your app opens the scene with demo data, sizes its window and calls `scene.Ready()`.
 
+`STORESHOTS_SIZE` is the **content (client-area) size**, without title bar or borders —
+storeshots captures only the content on Windows, and composes to 16:10 / 16:9 store sizes.
+
 ## Fyne
 
 ```go
@@ -44,6 +47,8 @@ w.ShowAndRun()
 ## Wails v2
 
 ```go
+import goruntime "runtime"
+
 s, shot := scene.FromEnv()
 opts := &options.App{
 	Width: 1024, Height: 768,
@@ -56,6 +61,11 @@ opts := &options.App{
 }
 if shot && s.Width > 0 {
 	opts.Width, opts.Height = s.Width, s.Height
+	// On Windows, Wails' Width/Height include the window frame. A frameless window
+	// makes the content exactly s.Width × s.Height (macOS keeps its real frame).
+	if goruntime.GOOS == "windows" {
+		opts.Frameless = true
+	}
 }
 
 // Bound method; the frontend calls it after navigating to the scene.
