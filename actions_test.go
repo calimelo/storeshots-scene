@@ -70,3 +70,21 @@ func TestOnActionWithoutEnvIsNoop(t *testing.T) {
 	t.Setenv(EnvActions, "")
 	OnAction(func(string) error { t.Error("handler must not run"); return nil })
 }
+
+func TestWatchActionsAnswersAtomically(t *testing.T) {
+	dir := t.TempDir()
+	stop := make(chan struct{})
+	defer close(stop)
+	go watchActions(dir, func(string) error { return errors.New("boom") }, 5*time.Millisecond, stop)
+	os.WriteFile(filepath.Join(dir, "0001.action"), []byte("x"), 0o644)
+	waitFile(t, filepath.Join(dir, "0001.error"))
+	entries, _ := os.ReadDir(dir)
+	for _, e := range entries {
+		if strings.HasSuffix(e.Name(), ".tmp") {
+			t.Fatalf("temp file left: %s", e.Name())
+		}
+	}
+	if b, _ := os.ReadFile(filepath.Join(dir, "0001.error")); string(b) != "boom" {
+		t.Fatalf("error file = %q", b)
+	}
+}

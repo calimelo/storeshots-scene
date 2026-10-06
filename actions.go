@@ -49,15 +49,24 @@ func watchActions(dir string, fn func(string) error, every time.Duration, stop <
 				err = fn(strings.TrimSpace(string(b)))
 			}
 			if err != nil {
-				os.WriteFile(base+".error", []byte(err.Error()), 0o644)
+				answer(base+".error", []byte(err.Error()))
 				continue
 			}
-			os.WriteFile(base+".done", nil, 0o644)
+			answer(base+".done", nil)
 		}
 		select {
 		case <-stop:
 			return
 		case <-tick.C:
 		}
+	}
+}
+
+// answer writes the reply atomically (temp file + rename) so storeshots never
+// reads a half-written error message.
+func answer(path string, data []byte) {
+	tmp := path + ".tmp"
+	if os.WriteFile(tmp, data, 0o644) == nil {
+		os.Rename(tmp, path)
 	}
 }
