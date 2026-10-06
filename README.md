@@ -81,3 +81,21 @@ EventsOn("storeshots:scene", async (name, lang) => {
   requestAnimationFrame(() => window.go.main.App.ScreenshotReady());
 });
 ```
+
+## Video actions (v0.2.0)
+
+`storeshots video` scenarios can send named actions to the app — for things
+that are hard to click (load sample data, trigger an animation):
+
+```go
+scene.OnAction(func(name string) error {
+	switch name {
+	case "load-sample":
+		fyne.Do(loadSample) // UI changes on the UI thread
+		return nil
+	}
+	return fmt.Errorf("unknown action %q", name)
+})
+```
+
+`OnAction` does nothing unless the app was started by `storeshots video`.
